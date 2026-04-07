@@ -2,6 +2,7 @@
 
 from dissector.dissector import Dissector
 from dissector.models import (
+    ARPInfo,
     DNSInfo,
     EthernetInfo,
     HTTPInfo,
@@ -20,4 +21,5 @@ __all__ = [
     "UDPInfo",
     "DNSInfo",
     "HTTPInfo",
+    "ARPInfo",
 ]

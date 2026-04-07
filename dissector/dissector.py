@@ -7,6 +7,7 @@
 
 from scapy.packet import Packet
 
+from dissector.arp import ARPDissector
 from dissector.dns import DNSDissector
 from dissector.ethernet import EthernetDissector
 from dissector.http import HTTPDissector
@@ -32,6 +33,7 @@ class Dissector:
         self._udp = UDPDissector()
         self._dns = DNSDissector()
         self._http = HTTPDissector()
+        self._arp = ARPDissector()
 
     def parse(self, packet: Packet) -> ParsedPacket:
         """Dissect a single packet into a ParsedPacket.
@@ -60,4 +62,5 @@ class Dissector:
             udp=self._udp.parse(packet),
             dns=self._dns.parse(packet),
             http=self._http.parse(packet),
+            arp=self._arp.parse(packet),
         )

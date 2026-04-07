@@ -61,6 +61,22 @@ class DNSInfo:
 
 
 @dataclass
+class ARPInfo:
+    """Parsed ARP message (EtherType 0x0806).
+
+    ARP (Address Resolution Protocol) maps IP addresses to MAC addresses on a
+    local network. Watching for unexpected ARP replies is the primary way to
+    detect ARP cache poisoning / spoofing attacks.
+    """
+
+    op: int        # Operation: 1 = request ("who has?"), 2 = reply ("X is at Y")
+    sender_mac: str  # Hardware address of the sender
+    sender_ip: str   # Protocol (IP) address of the sender
+    target_mac: str  # Hardware address of the intended receiver
+    target_ip: str   # Protocol (IP) address of the intended receiver
+
+
+@dataclass
 class HTTPInfo:
     """Best-effort parse of an HTTP/1.x request or response from a TCP payload.
 
@@ -93,3 +109,4 @@ class ParsedPacket:
     udp: UDPInfo | None = None
     dns: DNSInfo | None = None
     http: HTTPInfo | None = None
+    arp: ARPInfo | None = None

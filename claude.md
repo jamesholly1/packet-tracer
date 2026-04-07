@@ -43,7 +43,7 @@ packet-tracer/
 - [x] Phase 1: Project scaffold + config
 - [x] Phase 2: Capture module
 - [x] Phase 3: Protocol dissector
-- [ ] Phase 4: Anomaly detection
+- [x] Phase 4: Anomaly detection
 - [ ] Phase 5: CLI display
 - [ ] Phase 6: Tests + sample pcap integration
 - [ ] Phase 7: README + docs
