@@ -46,7 +46,7 @@ packet-tracer/
 - [x] Phase 4: Anomaly detection
 - [x] Phase 5: CLI display
 - [x] Phase 6: Tests + sample pcap integration
-- [ ] Phase 7: README + docs
+- [x] Phase 7: README + docs
 
 ## Notes for Claude Code
 - Prefer explicit over clever — this is a learning codebase
