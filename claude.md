@@ -45,7 +45,7 @@ packet-tracer/
 - [x] Phase 3: Protocol dissector
 - [x] Phase 4: Anomaly detection
 - [x] Phase 5: CLI display
-- [ ] Phase 6: Tests + sample pcap integration
+- [x] Phase 6: Tests + sample pcap integration
 - [ ] Phase 7: README + docs
 
 ## Notes for Claude Code

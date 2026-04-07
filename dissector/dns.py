@@ -50,24 +50,33 @@ class DNSDissector:
         is_response = bool(dns.qr)
 
         # Extract the first question record.
+        # We use haslayer() rather than checking dns.qdcount because newer
+        # versions of scapy may leave qdcount as None when qd is set implicitly.
         query_name = ""
         query_type = "UNKNOWN"
-        if dns.qdcount > 0 and dns.haslayer(DNSQR):
+        if dns.haslayer(DNSQR):
             qr = dns[DNSQR]
             # qname is bytes ending with b'.'; decode to a plain string.
             query_name = qr.qname.decode(errors="replace").rstrip(".")
             query_type = _QTYPE_NAMES.get(qr.qtype, str(qr.qtype))
 
         # Collect all answer records into a list of strings.
+        # Scapy 2.5+ stores dns.an as a PacketListField (a plain Python list).
+        # Older scapy chained records via rr.payload — we handle both forms.
         answers: list[str] = []
-        if is_response and dns.ancount > 0:
-            rr = dns.an
-            # DNSRR records are chained via the .payload attribute in scapy.
-            while rr and isinstance(rr, DNSRR):
-                # rdata can be bytes (A/AAAA) or another scapy object.
-                # str() gives a human-readable value in all cases.
-                answers.append(str(rr.rdata))
-                rr = rr.payload
+        if is_response and dns.an:
+            an = dns.an
+            if isinstance(an, list):
+                # New-style: iterate the list directly.
+                for rr in an:
+                    if isinstance(rr, DNSRR):
+                        answers.append(str(rr.rdata))
+            else:
+                # Old-style: walk the chain via .payload.
+                rr = an
+                while rr and isinstance(rr, DNSRR):
+                    answers.append(str(rr.rdata))
+                    rr = rr.payload
 
         return DNSInfo(
             is_response=is_response,
