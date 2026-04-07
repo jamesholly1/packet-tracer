@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+.Python
+*.egg-info/
+dist/
+build/
+.eggs/
+
+# Virtual environments
+venv/
+.venv/
+env/
+
+# Pytest
+.pytest_cache/
+htmlcov/
+.coverage
+
+# pcap files (can be large; commit only intentional samples)
+*.pcap
+*.pcapng
+# Allow the samples directory to track committed sample files
+!samples/*.pcap
+
+# OS
+.DS_Store
+Thumbs.db
+
+# IDE
+.vscode/
+.idea/
