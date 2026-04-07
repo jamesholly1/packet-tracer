@@ -42,7 +42,7 @@ packet-tracer/
 ## Phase tracking
 - [x] Phase 1: Project scaffold + config
 - [x] Phase 2: Capture module
-- [ ] Phase 3: Protocol dissector
+- [x] Phase 3: Protocol dissector
 - [ ] Phase 4: Anomaly detection
 - [ ] Phase 5: CLI display
 - [ ] Phase 6: Tests + sample pcap integration
