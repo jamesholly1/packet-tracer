@@ -3,3 +3,4 @@ pyshark>=0.6
 rich>=13.0.0
 pytest>=8.0.0
 PyQt6>=6.6.0
+pyinstaller>=6.0.0
