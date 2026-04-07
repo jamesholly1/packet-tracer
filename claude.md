@@ -44,7 +44,7 @@ packet-tracer/
 - [x] Phase 2: Capture module
 - [x] Phase 3: Protocol dissector
 - [x] Phase 4: Anomaly detection
-- [ ] Phase 5: CLI display
+- [x] Phase 5: CLI display
 - [ ] Phase 6: Tests + sample pcap integration
 - [ ] Phase 7: README + docs
 
