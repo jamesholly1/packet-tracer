@@ -1,117 +1,123 @@
-# main.py — Entrypoint for the packet tracer tool.
+# main.py — Entrypoint for the Packet Tracer tool.
 #
-# Usage:
-#   python main.py                        # read default pcap file
-#   python main.py --pcap path/to/file.pcap
-#   python main.py --live                 # live capture (requires root/sudo or
-#                                         # Administrator on Windows + Npcap)
-#   python main.py --live --iface eth0    # specify interface
+# Defaults to the desktop GUI. Use --cli for the original terminal dashboard.
+#
+# GUI usage:
+#   python main.py
+#
+# CLI usage:
+#   python main.py --cli --pcap samples/sample.pcap
+#   python main.py --cli --live --iface "eth0"
+#
+# NOTE: Live capture requires elevated privileges.
+#   Windows: run as Administrator (Npcap must be installed — https://npcap.com)
+#   Linux/macOS: run with sudo
 
 import argparse
 import sys
 
-from rich.console import Console
-
-from analyzer import AnalyzerEngine
-from capture import LiveCapture, PcapReader
-from config import DEFAULT_INTERFACE, PCAP_FILE_PATH
-from display import Dashboard
-from dissector import Dissector
-
-console = Console()
-
 
 def parse_args() -> argparse.Namespace:
-    """Define and parse CLI arguments."""
     parser = argparse.ArgumentParser(
-        description="Packet Tracer — capture, dissect, and detect anomalies"
+        description="Packet Tracer — capture, dissect, and detect network anomalies"
+    )
+    parser.add_argument(
+        "--cli",
+        action="store_true",
+        help="Run the terminal dashboard instead of the desktop GUI",
     )
     parser.add_argument(
         "--pcap",
         metavar="FILE",
-        default=PCAP_FILE_PATH,
-        help=f"Path to a .pcap file to read (default: {PCAP_FILE_PATH})",
+        default="samples/sample.pcap",
+        help="Path to a .pcap file (CLI mode, default: samples/sample.pcap)",
     )
     parser.add_argument(
         "--live",
         action="store_true",
-        help="Capture live from a network interface instead of reading a file",
+        help="Capture live from a network interface (CLI mode)",
     )
     parser.add_argument(
         "--iface",
         metavar="INTERFACE",
-        default=DEFAULT_INTERFACE,
-        help=f"Network interface for live capture (default: {DEFAULT_INTERFACE})",
+        default=None,
+        help="Network interface for live capture (CLI mode)",
     )
     parser.add_argument(
         "--max-packets",
         type=int,
         default=50,
-        help="Number of packets to show in the live table (default: 50)",
+        help="Rows shown in CLI packet table (default: 50)",
     )
     return parser.parse_args()
 
 
-def run_pcap(args: argparse.Namespace) -> None:
-    """Read and process packets from a pcap file."""
+def run_gui() -> None:
+    """Launch the PyQt6 desktop application."""
+    from PyQt6.QtWidgets import QApplication
+    from gui.main_window import MainWindow
+    from gui.styles import DARK_THEME
+
+    app = QApplication(sys.argv)
+    app.setApplicationName("Packet Tracer")
+    app.setStyleSheet(DARK_THEME)
+
+    window = MainWindow()
+    window.show()
+    sys.exit(app.exec())
+
+
+def run_cli(args: argparse.Namespace) -> None:
+    """Run the original rich terminal dashboard."""
+    from rich.console import Console
+    from analyzer import AnalyzerEngine
+    from capture import LiveCapture, PcapReader
+    from config import DEFAULT_INTERFACE, PCAP_FILE_PATH
+    from display import Dashboard
+    from dissector import Dissector
+
+    console = Console()
     dissector = Dissector()
     engine = AnalyzerEngine()
     dashboard = Dashboard(max_packets=args.max_packets)
 
-    try:
-        reader = PcapReader(args.pcap)
-    except FileNotFoundError as exc:
-        console.print(f"[bold red]Error:[/bold red] {exc}")
-        sys.exit(1)
+    if args.live:
+        iface = args.iface or DEFAULT_INTERFACE
+        console.print(f"[dim]Live capture on [bold]{iface}[/bold] — Ctrl-C to stop[/dim]")
+        capture = LiveCapture(interface=iface)
 
-    console.print(f"[dim]Reading from [bold]{args.pcap}[/bold]…[/dim]")
+        def on_packet(raw):
+            parsed = dissector.parse(raw)
+            dashboard.update(parsed, engine.analyze(parsed))
 
-    with dashboard.live_context():
-        for raw_packet in reader.stream():
-            parsed = dissector.parse(raw_packet)
-            alerts = engine.analyze(parsed)
-            dashboard.update(parsed, alerts)
+        try:
+            with dashboard.live_context():
+                capture.start(callback=on_packet)
+        except KeyboardInterrupt:
+            pass
+    else:
+        pcap_path = args.pcap or PCAP_FILE_PATH
+        try:
+            reader = PcapReader(pcap_path)
+        except FileNotFoundError as exc:
+            console.print(f"[bold red]Error:[/bold red] {exc}")
+            sys.exit(1)
 
-    dashboard.print_summary()
-
-
-def run_live(args: argparse.Namespace) -> None:
-    """Capture and process packets live from a network interface."""
-    dissector = Dissector()
-    engine = AnalyzerEngine()
-    dashboard = Dashboard(max_packets=args.max_packets)
-
-    console.print(
-        f"[dim]Starting live capture on [bold]{args.iface}[/bold] "
-        f"— press Ctrl-C to stop…[/dim]"
-    )
-    # NOTE: Live capture requires elevated privileges.
-    # On Linux/macOS: run with sudo.
-    # On Windows: run as Administrator and ensure Npcap is installed.
-
-    capture = LiveCapture(interface=args.iface)
-
-    def on_packet(raw_packet) -> None:  # type: ignore[no-untyped-def]
-        parsed = dissector.parse(raw_packet)
-        alerts = engine.analyze(parsed)
-        dashboard.update(parsed, alerts)
-
-    try:
+        console.print(f"[dim]Reading [bold]{pcap_path}[/bold]…[/dim]")
         with dashboard.live_context():
-            capture.start(callback=on_packet)
-    except KeyboardInterrupt:
-        pass  # Clean exit on Ctrl-C — summary is printed below
+            for raw in reader.stream():
+                parsed = dissector.parse(raw)
+                dashboard.update(parsed, engine.analyze(parsed))
 
     dashboard.print_summary()
 
 
 def main() -> None:
-    """Main entry point — dispatch to pcap or live mode."""
     args = parse_args()
-    if args.live:
-        run_live(args)
+    if args.cli:
+        run_cli(args)
     else:
-        run_pcap(args)
+        run_gui()
 
 
 if __name__ == "__main__":

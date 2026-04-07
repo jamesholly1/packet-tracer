@@ -34,18 +34,20 @@ class LiveCapture:
         callback: Callable[[Packet], None],
         count: int = 0,
         timeout: int | None = None,
+        stop_filter: Callable[[Packet], bool] | None = None,
     ) -> None:
         """Begin capturing packets and invoke callback for each one.
 
-        Blocks until `count` packets are captured or `timeout` seconds elapse.
-        Pass count=0 and timeout=None to run indefinitely (Ctrl-C to stop).
+        Blocks until `count` packets are captured, `timeout` seconds elapse,
+        or `stop_filter` returns True. Pass count=0 and timeout=None to run
+        indefinitely (Ctrl-C to stop in CLI mode).
 
         Args:
-            callback: Function called with each captured Packet. Keep it fast —
-                      scapy's sniff loop waits for it before capturing the next
-                      packet, so slow callbacks can cause drops.
-            count:    Stop after this many packets. 0 means no limit.
-            timeout:  Stop after this many seconds. None means no limit.
+            callback:    Function called with each captured Packet.
+            count:       Stop after this many packets. 0 means no limit.
+            timeout:     Stop after this many seconds. None means no limit.
+            stop_filter: Called after each packet; sniff stops when it returns
+                         True. Used by the GUI thread to stop capture cleanly.
 
         Raises:
             PermissionError: Raised by scapy if the process lacks the privileges
@@ -59,4 +61,5 @@ class LiveCapture:
             count=count,
             timeout=timeout,
             store=False,
+            stop_filter=stop_filter,
         )
